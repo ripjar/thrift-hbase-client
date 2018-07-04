@@ -147,12 +147,9 @@ module.exports = class HbaseClient {
     const table = options.table
     const columns = prepareColumns(options.columns)
 
-    const rows = {}
-
     if (!options.rowkey) {
       return Promise.reject('missing required parameter: rowkey')
     }
-    rows[options.rowkey] = options.columns
     return this.getConnection().then(connection => {
       return new Promise((resolve, reject) => {
         connection.client.mutateRow(table, options.rowkey, columns, null, (err, data) => {
