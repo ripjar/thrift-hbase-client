@@ -1,0 +1,23 @@
+{
+  "name": "thrift-hbase-client",
+  "version": "1.0.0",
+  "description": "Hbase.thrift from https://raw.githubusercontent.com/apache/hbase/master/hbase-thrift/src/main/resources/org/apache/hadoop/hbase/thrift/Hbase.thrift",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/welefen/thrift-hbase-client.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/welefen/thrift-hbase-client/issues"
+  },
+  "homepage": "https://github.com/welefen/thrift-hbase-client#readme",
+  "dependencies": {
+    "think-debounce": "^1.0.3",
+    "thrift": "^0.11.0"
+  }
+}
