@@ -110,16 +110,13 @@ module.exports = class HbaseClient {
         })
         connection.on('error', err => {
           reject(err);
-          this.connection = null;
         });
     
         connection.on('close', () => {
           reject(new Error('connection closed'))
-          this.connection = null;
         })
         connection.on('timeout', () => {
           reject(new Error('connection timeout'))
-          this.connection = null;
         })
       })
     })
