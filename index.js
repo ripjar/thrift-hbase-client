@@ -85,7 +85,8 @@ module.exports = class HbaseClient {
       host: 'localhost',
       port: 9090,
       timeout: 3000,
-      connect_timeout: 30000
+      connect_timeout: 30000,
+      logger: console
     }, options);
     this.connection = null;
     this.debounce = new Debounce();
@@ -109,13 +110,18 @@ module.exports = class HbaseClient {
           resolve(connection);
         })
         connection.on('error', err => {
+          const error = new Error('ThriftHbaseClient connection error');
+          this.logger.error(error);
+          this.logger.error(err);
           reject(err);
         });
     
         connection.on('close', () => {
+          think.logger.log('ThriftHbaseClient connection closed');
           reject(new Error('connection closed'))
         })
         connection.on('timeout', () => {
+          think.logger.log('ThriftHbaseClient connection timeout');
           reject(new Error('connection timeout'))
         })
       })
@@ -145,7 +151,7 @@ module.exports = class HbaseClient {
     const columns = prepareColumns(options.columns)
 
     if (!options.rowkey) {
-      return Promise.reject('missing required parameter: rowkey')
+      return Promise.reject(new Error('missing required parameter: rowkey'))
     }
     return this.getConnection().then(connection => {
       return new Promise((resolve, reject) => {
