@@ -1,5 +1,6 @@
 const thrift = require('thrift')
 const Debounce = require('think-debounce')
+const helper = require('think-helper')
 
 const HBase = require('./gen-nodejs/Hbase.js')
 const HBaseTypes = require('./gen-nodejs/Hbase_types.js')
@@ -88,6 +89,7 @@ module.exports = class HbaseClient {
       connect_timeout: 30000,
       logger: console
     }, options);
+    this.logger = this.options.logger;
     this.connection = null;
     this.debounce = new Debounce();
   }
@@ -100,7 +102,6 @@ module.exports = class HbaseClient {
         const connection = thrift.createConnection(this.options.host, this.options.port, {
           transport: thrift.TFramedTransport,
           protocol: thrift.TBinaryProtocol,
-          timeout: this.options.timeout,
           connect_timeout: this.options.connect_timeout
         })
         connection.once('connect', () => {
@@ -118,6 +119,9 @@ module.exports = class HbaseClient {
         connection.on('reconnecting', data => {
           this.logger.log('ThriftHbaseClient reconnecting', data);
         })
+        connection.on('end', () => {
+          this.logger.log('ThriftHbaseClient end');
+        })
         connection.on('close', () => {
           this.logger.log('ThriftHbaseClient connection closed');
           reject(new Error('connection closed'))
@@ -129,7 +133,7 @@ module.exports = class HbaseClient {
       })
     })
   }
-  getRow(options = {}) {
+  _getRow(options = {}) {
     const table = options.table
     return this.getConnection().then(connection => {
       return new Promise((resolve, reject) => {
@@ -148,7 +152,16 @@ module.exports = class HbaseClient {
       })
     })
   }
-  putRow(options = {}) {
+  timeout() {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const err = new Error('ThriftHbaseClient timeout');
+        err.errorType = 'ThriftHbaseClientTimeout';
+        reject(err);
+      }, this.options.timeout)
+    })
+  }
+  _putRow(options = {}) {
     const table = options.table
     const columns = prepareColumns(options.columns)
 
@@ -163,5 +176,37 @@ module.exports = class HbaseClient {
         })
       })
     })
+  }
+  async getRow(options, times = 1) {
+    const put = this._getRow(options);
+    const timeout = this.timeout();
+    const data = await Promise.race([put, timeout]).catch(err => err);
+    if (helper.isError(data)) {
+      if (data.errorType === 'ThriftHbaseClientTimeout' && times < 3) {
+        this.close();
+        return this.getRow(options, times + 1);
+      }
+      return Promise.reject(data);
+    }
+    return data;
+  }
+  async putRow(options, times = 1) {
+    const put = this._putRow(options);
+    const timeout = this.timeout();
+    const data = await Promise.race([put, timeout]).catch(err => err);
+    if (helper.isError(data)) {
+      if (data.errorType === 'ThriftHbaseClientTimeout' && times < 3) {
+        this.close();
+        return this.putRow(options, times + 1);
+      }
+      return Promise.reject(data);
+    }
+    return data;
+  }
+  close () {
+    if (this.connection) {
+      this.connection.connection.destroy();
+      this.connection = null;
+    }
   }
 }
