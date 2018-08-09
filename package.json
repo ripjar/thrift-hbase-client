@@ -1,6 +1,6 @@
 {
   "name": "thrift-hbase-client",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Hbase.thrift from https://raw.githubusercontent.com/apache/hbase/master/hbase-thrift/src/main/resources/org/apache/hadoop/hbase/thrift/Hbase.thrift",
   "main": "index.js",
   "scripts": {
