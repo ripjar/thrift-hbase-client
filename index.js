@@ -102,6 +102,7 @@ module.exports = class HbaseClient {
         const connection = thrift.createConnection(this.options.host, this.options.port, {
           transport: thrift.TFramedTransport,
           protocol: thrift.TBinaryProtocol,
+          timeout: this.options.timeout,
           connect_timeout: this.options.connect_timeout
         })
         connection.once('connect', () => {
@@ -124,16 +125,15 @@ module.exports = class HbaseClient {
         })
         connection.on('close', () => {
           this.logger.log('ThriftHbaseClient connection closed');
-          reject(new Error('connection closed'))
+          this.close();
         })
         connection.on('timeout', () => {
           this.logger.log('ThriftHbaseClient connection timeout');
-          reject(new Error('connection timeout'))
         })
       })
     })
   }
-  _getRow(options = {}) {
+  getRow(options = {}) {
     const table = options.table
     return this.getConnection().then(connection => {
       return new Promise((resolve, reject) => {
@@ -152,16 +152,7 @@ module.exports = class HbaseClient {
       })
     })
   }
-  timeout() {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const err = new Error('ThriftHbaseClient timeout');
-        err.errorType = 'ThriftHbaseClientTimeout';
-        reject(err);
-      }, this.options.timeout)
-    })
-  }
-  _putRow(options = {}) {
+  putRow(options = {}) {
     const table = options.table
     const columns = prepareColumns(options.columns)
 
@@ -176,32 +167,6 @@ module.exports = class HbaseClient {
         })
       })
     })
-  }
-  async getRow(options, times = 1) {
-    const put = this._getRow(options);
-    const timeout = this.timeout();
-    const data = await Promise.race([put, timeout]).catch(err => err);
-    if (helper.isError(data)) {
-      if (data.errorType === 'ThriftHbaseClientTimeout' && times < 3) {
-        this.close();
-        return this.getRow(options, times + 1);
-      }
-      return Promise.reject(data);
-    }
-    return data;
-  }
-  async putRow(options, times = 1) {
-    const put = this._putRow(options);
-    const timeout = this.timeout();
-    const data = await Promise.race([put, timeout]).catch(err => err);
-    if (helper.isError(data)) {
-      if (data.errorType === 'ThriftHbaseClientTimeout' && times < 3) {
-        this.close();
-        return this.putRow(options, times + 1);
-      }
-      return Promise.reject(data);
-    }
-    return data;
   }
   close () {
     if (this.connection) {
