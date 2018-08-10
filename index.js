@@ -117,18 +117,9 @@ module.exports = class HbaseClient {
           this.logger.error(err);
           reject(err);
         });
-        connection.on('reconnecting', data => {
-          this.logger.log('ThriftHbaseClient reconnecting', data);
-        })
-        connection.on('end', () => {
-          this.logger.log('ThriftHbaseClient end');
-        })
         connection.on('close', () => {
           this.logger.log('ThriftHbaseClient connection closed');
           this.close();
-        })
-        connection.on('timeout', () => {
-          this.logger.log('ThriftHbaseClient connection timeout');
         })
       })
     })
