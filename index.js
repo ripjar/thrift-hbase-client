@@ -128,7 +128,15 @@ module.exports = class HbaseClient {
     const table = options.table
     return this.getConnection().then(connection => {
       return new Promise((resolve, reject) => {
+
+        // listening error event
+        // callback not invoked when connection error
+        const connectionError = err => reject(err);
+        connection.once('error', connectionError);
+        
         const handleResponse = (err, rows) => {
+          connection.removeListener('error', connectionError);
+
           if (err) {
             reject(err);
           } else {
@@ -152,7 +160,15 @@ module.exports = class HbaseClient {
     }
     return this.getConnection().then(connection => {
       return new Promise((resolve, reject) => {
+
+        // listening error event
+        // callback not invoked when connection error
+        const connectionError = err => reject(err);
+        connection.once('error', connectionError);
+
         connection.client.mutateRow(table, options.rowkey, columns, null, (err, data) => {
+          connection.removeListener('error', connectionError);
+
           if (err) reject(err);
           resolve(data);
         })
