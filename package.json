@@ -19,6 +19,6 @@
   "dependencies": {
     "think-debounce": "^1.0.3",
     "think-helper": "^1.1.1",
-    "thrift": "^0.11.0"
+    "thrift": "0.12.0"
   }
 }
