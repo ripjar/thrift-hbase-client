@@ -9,7 +9,7 @@ const HBaseTypes = require('./gen-nodejs/Hbase_types.js')
  * formatRows
  */
 
-function formatRows(data, includeFamilies) {
+function formatRows(data, includeFamilies, return_raw = false) {
     const rows = []
     for (let i = 0; i < data.length; i++) {
         const r = {
@@ -22,10 +22,10 @@ function formatRows(data, includeFamilies) {
 
         for (key in data[i].columns) {
             if (includeFamilies) {
-                r.columns[key] = data[i].columns[key].value.toString('utf8')
+                r.columns[key] = return_raw ? data[i].columns[key].value : data[i].columns[key].value.toString('utf8')
             } else {
                 parts = key.split(':')
-                r.columns[parts[1]] = data[i].columns[key].value.toString('utf8')
+                r.columns[parts[1]] = return_raw ? data[i].columns[key].value : data[i].columns[key].value.toString('utf8')
             }
         }
 
@@ -143,7 +143,7 @@ module.exports = class HbaseClient {
                     if (err) {
                         reject(err);
                     } else {
-                        resolve(rows ? formatRows(rows, options.includeFamilies)[0] : undefined)
+                        resolve(rows ? formatRows(rows, options.includeFamilies, options.return_raw)[0] : undefined)
                     }
                 }
                 if (options.columns) {
